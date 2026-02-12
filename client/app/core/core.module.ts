@@ -3,19 +3,20 @@ import { CommonModule } from '@angular/common';
 import { FooterComponent } from './footer/footer.component';
 import {RouterModule} from '@angular/router';
 import { HeaderComponent } from './header/header.component';
-import {
-  MatAutocompleteModule,
-  MatButtonModule,
-  MatCardModule, MatExpansionModule,
-  MatIconModule, MatIconRegistry,
-  MatInputModule,
-  MatListModule, MatSidenavModule,
-  MatTableModule,
-  MatToolbarModule
-} from '@angular/material';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatListModule } from '@angular/material/list';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatTableModule } from '@angular/material/table';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import {CoreRoutingModule} from './core-routing.module';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {ReactiveFormsModule} from '@angular/forms';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {HTTP_INTERCEPTORS, HttpClientModule} from '@angular/common/http';
 import {DeviceService} from './services/device.service';
 import {ApiService} from './services/api.service';
@@ -28,11 +29,10 @@ import { faMeh, faEnvelope, faEnvelopeOpen, faTrashAlt, faClock, faPaperPlane, f
 import {SharedModule} from '../shared/shared.module';
 import {HomeModule} from '../home/home.module';
 import {ConfigService} from './services/config.service';
-import {DurationPipe, MomentModule} from 'ngx-moment';
+import {MomentModule} from 'ngx-moment';
 import {TokenInterceptor} from './services/token-interceptor';
 import { SeoService } from './services/seo.service';
 import {Angulartics2Module} from 'angulartics2';
-import {AdsenseModule} from 'ng2-adsense';
 
 export function initializeApp(ahemProperties: ConfigService) {
   return () => ahemProperties.load();
@@ -71,10 +71,6 @@ library.add(faMeh, faEnvelope, faEnvelopeOpen, faBars, faTrash, faTrashAlt, faCl
     HomeModule,
     SharedModule,
     Angulartics2Module.forRoot(),
-    AdsenseModule.forRoot({
-      adClient: 'ca-pub-4119576279673540',
-      adSlot: 9150292677,
-    }),
     CoreRoutingModule
   ],
   exports: [
@@ -93,10 +89,10 @@ library.add(faMeh, faEnvelope, faEnvelopeOpen, faBars, faTrash, faTrashAlt, faCl
       useClass: TokenInterceptor,
       multi: true
     },
-    DurationPipe,
     ApiService,
     SeoService,
     MatIconRegistry,
     DeviceService],
 })
 export class CoreModule { }
+
