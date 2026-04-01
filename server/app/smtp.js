@@ -55,6 +55,13 @@ function startSTMPServer(properties, db, io) {
             }
           });
 
+          // Persist SMTP envelope recipients on the email document.
+          // These are the authoritative delivery targets from the SMTP
+          // RCPT TO commands, which may differ from the To: header
+          // (e.g. when mail is auto-forwarded).
+          const envelopeRecipients = session.envelope.rcptTo || [];
+          mail.envelopeTo = envelopeRecipients.map(r => r.address);
+
           db.collection('emails').insertOne(mail, function (err1, result) {
             if (err1) {
               logger.error('Error in writing email to db!', err1);
@@ -76,7 +83,23 @@ function startSTMPServer(properties, db, io) {
               io.emit('emailCount', result.value);
             });
             try {
-              mail.to.value.forEach(recipient => {
+              // Determine which recipients to use for mailbox routing.
+              //
+              // Default (useEnvelopeRecipients: false / unset):
+              //   Use the parsed To: header — the original behavior.
+              //
+              // useEnvelopeRecipients: true:
+              //   Use the SMTP envelope RCPT TO addresses instead. This is
+              //   needed when AHEM receives forwarded mail (e.g. Gmail
+              //   auto-forward), where the To: header retains the original
+              //   recipient but RCPT TO contains the actual forwarding
+              //   destination. Without this flag, forwarded emails are stored
+              //   in MongoDB but never appear in the target mailbox.
+              const recipients = properties.useEnvelopeRecipients
+                ? envelopeRecipients
+                : (mail.to && mail.to.value ? mail.to.value : []);
+
+              recipients.forEach(recipient => {
                 const nameAndDomain = recipient.address.split('@');
                 if (properties.allowedDomains.indexOf(nameAndDomain[1].toLowerCase()) > -1) {
                   db.collection('mailboxes').updateOne({'name': nameAndDomain[0].toLowerCase()}, {
@@ -101,7 +124,6 @@ function startSTMPServer(properties, db, io) {
             } catch (e) {
               logger.error(e);
             }
-            ;
           });
         });
         return callback();
