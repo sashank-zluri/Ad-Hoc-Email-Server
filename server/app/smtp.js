@@ -43,6 +43,10 @@ function startSTMPServer(properties, db, io) {
 
       stream.on('end', function () {
         logger.info('SMTP DATA end');
+        // Capture envelope recipients eagerly — once callback() is called
+        // (below), smtp-server may reset the session envelope before the
+        // async simpleParser callback fires.
+        const envelopeRecipients = (session.envelope.rcptTo || []).map(r => r.address);
         simpleParser(mailDataString, (err, mail) => {
           mail.timestamp = new Date().getTime();
 
@@ -55,12 +59,8 @@ function startSTMPServer(properties, db, io) {
             }
           });
 
-          // Persist SMTP envelope recipients on the email document.
-          // These are the authoritative delivery targets from the SMTP
-          // RCPT TO commands, which may differ from the To: header
-          // (e.g. when mail is auto-forwarded).
-          const envelopeRecipients = session.envelope.rcptTo || [];
-          mail.envelopeTo = envelopeRecipients.map(r => r.address);
+          // Persist SMTP envelope recipients (captured eagerly above).
+          mail.envelopeTo = envelopeRecipients;
 
           db.collection('emails').insertOne(mail, function (err1, result) {
             if (err1) {
@@ -96,7 +96,7 @@ function startSTMPServer(properties, db, io) {
               //   destination. Without this flag, forwarded emails are stored
               //   in MongoDB but never appear in the target mailbox.
               const recipients = properties.useEnvelopeRecipients
-                ? envelopeRecipients
+                ? envelopeRecipients.map(addr => ({ address: addr }))
                 : (mail.to && mail.to.value ? mail.to.value : []);
 
               recipients.forEach(recipient => {
