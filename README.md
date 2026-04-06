@@ -61,9 +61,30 @@ emailDeleteAge | The age in seconds above which emails will be deleted.
 allowedDomains | An array of allowed email domains. These domains will be allowed by the server as RCPT TO: entries. This also makes the server not act as an open relay. Format: ["my.domain.com", "my.second-domain.com"].
 customText | HTML string that will replace the default text in the landing page.
 allowAutocomplete | If set to false, will prevent auto completing users in the ui.
+useEnvelopeRecipients | When set to `true`, mailbox routing uses the SMTP envelope `RCPT TO` address instead of the parsed `To:` header. This is required when AHEM receives **forwarded email** (e.g. Gmail auto-forward, Postfix aliases, Exchange transport rules), where the `To:` header retains the original recipient but the SMTP envelope contains the actual forwarding destination. Default: `false`. See [Email Forwarding](#email-forwarding) below.
 jwtSecret | The JWT secret, if using token authentication.
 jwtExpiresIn | JWT token TTL in seconds. -1 means token validation is not enforced.
 maxAllowedApiCalls | If using token validation, this is the amount of API calls a token is allowed to make.
+
+### Email Forwarding
+
+When email is forwarded to AHEM (e.g. via Gmail auto-forwarding), the `To:` header still contains the **original** recipient address, not the AHEM mailbox address. By default, AHEM uses the `To:` header for mailbox routing, which means forwarded emails may not appear in any mailbox if the original domain isn't in `allowedDomains`.
+
+To fix this, set `useEnvelopeRecipients=true` in your `.env` or environment variables. This tells AHEM to route emails based on the SMTP `RCPT TO` envelope address — which is the authoritative delivery target set by the forwarding MTA.
+
+**Example scenario:**
+
+```
+Original:  Adobe sends email to user@gmail.com        (To: header = user@gmail.com)
+Forwarded: Gmail auto-forwards to inbox@mail.ahem.com (SMTP RCPT TO = inbox@mail.ahem.com)
+```
+
+| Setting | Routing uses | Result |
+|---------|-------------|--------|
+| `useEnvelopeRecipients=false` (default) | `To:` header → `user@gmail.com` | Email stored but **not routed** to any mailbox (domain mismatch) |
+| `useEnvelopeRecipients=true` | SMTP envelope → `inbox@mail.ahem.com` | Email appears in `inbox` mailbox |
+
+Regardless of this setting, the SMTP envelope recipients are always persisted on the email document as `envelopeTo`, giving API consumers access to the authoritative delivery targets.
 
 ### Docker
 * Build docker: docker build -t o4oren/ahem .
