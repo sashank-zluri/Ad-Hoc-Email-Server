@@ -23,7 +23,8 @@ const properties = {
   jwtSecret: process.env.jwtSecret,
   jwtExpiresIn: parseInt(process.env.jwtExpiresIn) || 3600,
   maxAllowedApiCalls: parseInt(process.env.maxAllowedApiCalls) || 10000,
-  webHookUrl: process.env.webHookUrl
+  webHookUrl: process.env.webHookUrl,
+  useEnvelopeRecipients: process.env.useEnvelopeRecipients === 'true'
 };
 
 logger.info('connecting to db', properties.mongoConnectUrl);
