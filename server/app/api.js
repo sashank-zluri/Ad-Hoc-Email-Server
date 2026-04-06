@@ -29,7 +29,8 @@ router.get('/properties', (req, res, next) => {
     emailDeleteAge: req.properties.emailDeleteAge,
     allowedDomains: req.properties.allowedDomains,
     customText: req.properties.customText,
-    allowAutocomplete: req.properties.allowAutocomplete
+    allowAutocomplete: req.properties.allowAutocomplete,
+    useEnvelopeRecipients: req.properties.useEnvelopeRecipients
   });
 });
 
